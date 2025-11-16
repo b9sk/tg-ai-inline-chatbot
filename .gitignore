@@ -1,3 +1,5 @@
+worker/wrangler.toml
+
 # Logs
 logs
 *.log
