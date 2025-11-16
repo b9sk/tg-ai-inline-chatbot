@@ -6,10 +6,15 @@ export default async function handler(req, res) {
 
   const sessionId = `${user.id}_${Date.now()}`;
 
-  const flowiseRes = await fetch(`${process.env.FLOWISE_BASE_URL}/run/${process.env.FLOWISE_FLOW_ID}`, {
+  const flowiseRes = await fetch(`${process.env.FLOWISE_BASE_URL}/api/v1/prediction/${process.env.FLOWISE_FLOW_ID}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, question: text }),
+    body: JSON.stringify({
+      question: text,
+      overrideConfig: {
+        sessionId: sessionId,
+      },
+    }),
   });
 
   const data = await flowiseRes.json();
