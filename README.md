@@ -1,10 +1,6 @@
-# ⚙️ Проект: `telegram-inline-ai-bot`
+# Telegram Inline AI Bot
 
----
-
-## 🧭 Архитектурное описание Telegram Inline AI Bot
-
-### 1. Общая идея
+## 1. Идея
 
 Бот работает **исключительно в inline-режиме**:
 
@@ -15,7 +11,7 @@
 Пользователь вводит запрос прямо в Telegram, а бот отвечает в том же чате.
 Цель — лёгкий, быстрый и полностью безбазовый AI-бот на связке **Flowise + Gemini API**, управляемый минимальным backend.
 
-### 2. Общая архитектура
+## 2. Архитектура
 
 ```mermaid
 graph LR
@@ -38,7 +34,7 @@ graph LR
    * обращается к **Flowise**.
 4. Ответ возвращается по цепочке назад.
 
-### 3. Роли компонентов
+### Роли компонентов
 
 | Компонент                      | Роль                                                           | Примечание                                                   |
 | ------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------ |
@@ -47,7 +43,7 @@ graph LR
 | **Backend (Node.js / Python)** | техническая прослойка: создаёт `sessionId`, вызывает Flowise   | может быть одной serverless-функцией                         |
 | **Flowise**                    | управляет контекстом и вызывает Gemini API                     | не хранит чаты, контексты из `sessionId`                      |
 
-### 4. Ключевые принципы
+### Ключевые принципы
 
 * **Без БД** — все состояния временные, хранятся в памяти Flowise.
 * **Stateless backend** — сервер можно перезапускать без потерь.
@@ -76,135 +72,7 @@ telegram-inline-ai-bot/
 
 ---
 
-## 🧱 1. Cloudflare Worker
-
-**`worker/worker.js`:**
-
-```js
-const BOT_TOKEN = ENV.BOT_TOKEN;
-const BACKEND_URL = ENV.BACKEND_URL;
-
-export default {
-  async fetch(request, env) {
-    const update = await request.json();
-    console.log("Received:", update);
-
-    // передаём апдейт на backend
-    const res = await fetch(env.BACKEND_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(update),
-    });
-    const data = await res.json();
-
-    // Inline запрос
-    if (update.inline_query) {
-      const answer = {
-        inline_query_id: update.inline_query.id,
-        results: [
-          {
-            type: "article",
-            id: "1",
-            title: "Ответ:",
-            input_message_content: {
-              message_text: data.reply || "⚠️ Нет ответа",
-            },
-          },
-        ],
-      };
-
-      await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/answerInlineQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(answer),
-      });
-    }
-
-    // Reply (обычный message)
-    if (update.message && update.message.reply_to_message) {
-      const chatId = update.message.chat.id;
-      const text = data.reply || "⚠️ Нет ответа";
-
-      await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text }),
-      });
-    }
-
-    return new Response("OK", { status: 200 });
-  },
-};
-```
-
-**`worker/wrangler.toml`:**
-
-```toml
-name = "telegram-inline-ai-bot"
-main = "worker.js"
-compatibility_date = "2025-01-01"
-
-[vars]
-BOT_TOKEN = "123456:ABCDEF..."
-BACKEND_URL = "https://your-backend-host.vercel.app/api/flowise"
-```
-
----
-
-## 🧠 2. Backend (Node.js serverless API)
-
-**`backend/handler.js`:**
-
-```js
-export default async function handler(req, res) {
-  const body = await req.json();
-  const user = body.inline_query?.from || body.message?.from;
-  const text = body.inline_query?.query || body.message?.text;
-  if (!user || !text) return new Response("Invalid", { status: 400 });
-
-  const sessionId = `${user.id}_${Date.now()}`;
-
-  const flowiseRes = await fetch(`${process.env.FLOWISE_BASE_URL}/run/${process.env.FLOWISE_FLOW_ID}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, question: text }),
-  });
-
-  const data = await flowiseRes.json();
-  return new Response(JSON.stringify({ reply: data.text || "Нет ответа" }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-```
-
-**`backend/package.json`:**
-
-```json
-{
-  "name": "flowise-backend",
-  "type": "module",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "node handler.js"
-  },
-  "dependencies": {}
-}
-```
-
-**`backend/.env`:**
-
-```
-FLOWISE_BASE_URL=https://your-flowise-instance.com
-FLOWISE_FLOW_ID=xxxxxxxx
-```
-
-> 🔧 Для деплоя на **Vercel** достаточно поместить `handler.js` в `api/flowise.js`.
-> Для **Render / Netlify** — указать entrypoint `handler.js`.
-
----
-
-## ⚡ 3. Настройка Telegram
+## Настройка Telegram
 
 1. Создай бота через [@BotFather](https://t.me/BotFather).
 2. Введи команду:
@@ -223,23 +91,7 @@ FLOWISE_FLOW_ID=xxxxxxxx
 
 ---
 
-## 🧩 4. Flowise
-
-* Создай Flow с входами `sessionId` и `question`.
-* Экспортируй `flowId` (на вкладке "API").
-* Проверь, что твой Flow доступен по POST-запросу:
-
-  ```
-  POST https://your-flowise-url.com/run/<flowId>
-  {
-    "sessionId": "test_123",
-    "question": "Привет"
-  }
-  ```
-
----
-
-## 📘 5. Пример `.env` (общее)
+## Пример `.env` (общее)
 
 | Файл           | Переменная         | Значение               |
 | -------------- | ------------------ | ---------------------- |
@@ -250,7 +102,7 @@ FLOWISE_FLOW_ID=xxxxxxxx
 
 ---
 
-## 💡 6. Деплой пошагово
+## Деплой
 
 1. Задеплой backend (например, на Vercel → получишь URL вроде `https://flowise-backend.vercel.app/api/flowise`).
 2. Укажи этот URL в `worker/wrangler.toml`.
@@ -268,12 +120,3 @@ FLOWISE_FLOW_ID=xxxxxxxx
 5. Проверь:
    Введи в Telegram `@botname привет` → должен появиться inline-ответ.
 
----
-
-## ✅ Итого
-
-| Компонент             | Назначение                                             | Развёртывание          |
-| --------------------- | ------------------------------------------------------ | ---------------------- |
-| **Cloudflare Worker** | принимает webhook, вызывает backend, отвечает Telegram | Cloudflare (Free)      |
-| **Backend (Node)**    | формирует sessionId, обращается к Flowise              | Vercel / Render / Deta |
-| **Flowise**           | генерирует ответ через Gemini API                      | Render / Railway / VPS |
