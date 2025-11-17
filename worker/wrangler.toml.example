@@ -3,5 +3,5 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-BOT_TOKEN = "123456:ABCDEF..."
+BOT_TOKEN = ""
 BACKEND_URL = "https://your-backend-host.vercel.app/api/flowise"
