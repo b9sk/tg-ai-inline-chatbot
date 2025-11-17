@@ -33,7 +33,10 @@ export default async function handler(req, res) {
     }
 
     const data = await flowiseRes.json().catch(() => ({}));
-    return res.status(200).json({ reply: data.text || "Нет ответа" });
+    return res.status(200).json({
+      reply: data.text || "Нет ответа",
+      data
+    });
   } catch (err) {
     console.error("/api/flowise error:", err);
     return res.status(500).json({ error: "Internal server error" });
