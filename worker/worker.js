@@ -1,5 +1,5 @@
-const BOT_TOKEN = ENV.BOT_TOKEN;
-const BACKEND_URL = ENV.BACKEND_URL;
+const BOT_TOKEN = env.BOT_TOKEN;
+const BACKEND_URL = env.BACKEND_URL;
 
 export default {
   async fetch(request, env) {
