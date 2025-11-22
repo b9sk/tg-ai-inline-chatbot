@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Замените <YOUR_REMOTE_HOST_URL> на URL вашего развернутого обработчика
-URL="https://tg-ai-inline-bot.vercel.app/api/flowise" # Замените <YOUR_VERCEL_DEPLOYMENT_URL> на URL вашего развернутого обработчика
+URL="http://localhost:3000/api/flowise" # Замените <YOUR_VERCEL_DEPLOYMENT_URL> на URL вашего развернутого обработчика
 
 if [ "$URL" == "https://<YOUR_VERCEL_DEPLOYMENT_URL>/api/flowise" ]; then
   echo "Пожалуйста, отредактируйте файл test.sh и замените <YOUR_VERCEL_DEPLOYMENT_URL> на ваш реальный URL."

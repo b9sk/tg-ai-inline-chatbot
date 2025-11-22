@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "deploy": "vercel deploy",
-    "prod": "vercel --prod"
+    "prod": "vercel --prod",
+    "dev": "node local.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "express": "^4.18.2"
+  }
 }
