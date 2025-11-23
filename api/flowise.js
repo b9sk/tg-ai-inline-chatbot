@@ -1,3 +1,5 @@
+require('../utils/serverlessLogger');
+
 export default async function handler(req, res) {
   // Expecting a Telegram webhook-like body containing either
   // `inline_query` or `message` objects. Preserve previous behavior.
@@ -15,6 +17,7 @@ export default async function handler(req, res) {
 
     const sessionId = `${user.id}_${Date.now()}`;
 
+    console.log(`Sending request to Flowise for user ${user.id} with text: "${text}"`);
     const flowiseUrl = `${process.env.FLOWISE_BASE_URL}/api/v1/prediction/${process.env.FLOWISE_FLOW_ID}`;
 
     const flowiseRes = await fetch(flowiseUrl, {
@@ -33,6 +36,7 @@ export default async function handler(req, res) {
     }
 
     const data = await flowiseRes.json().catch(() => ({}));
+    console.log(`Received response from Flowise: ${JSON.stringify(data)}`);
     return res.status(200).json({
       reply: data.text || "Нет ответа",
       data
