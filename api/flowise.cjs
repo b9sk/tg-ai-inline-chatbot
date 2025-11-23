@@ -1,6 +1,6 @@
-require('../utils/serverlessLogger');
+require('../utils/serverlessLogger.cjs');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Expecting a Telegram webhook-like body containing either
   // `inline_query` or `message` objects. Preserve previous behavior.
   try {

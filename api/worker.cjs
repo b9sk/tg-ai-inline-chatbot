@@ -1,9 +1,9 @@
-require('../utils/serverlessLogger');
+require('../utils/serverlessLogger.cjs');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const BACKEND_URL = process.env.BACKEND_URL;
 
-export default async function handler(request, response) {
+module.exports = async function handler(request, response) {
   const update = await request.json();
   console.log("Received update:", update);
 

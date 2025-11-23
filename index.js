@@ -1,6 +1,6 @@
 import express from 'express';
-import flowise from './api/flowise.js'
-import worker from './api/worker.js'
+import flowise from './api/flowise.cjs'
+import worker from './api/worker.cjs'
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 
