@@ -1,129 +1,33 @@
-# Telegram Inline AI Bot
+# Backend Local Server
 
----
+This document provides instructions on how to run the local development server and examples for interacting with the API endpoints.
 
-## 
+## Running the Local Server
 
-1. [Как запустить локальный сервер](backend/README.md)
+To start the local development server, navigate to the `backend/` directory and run the following command:
 
----
-
-## 1. Идея
-
-Бот работает **исключительно в inline-режиме**:
-
-```
-@botname prompt
+```bash
+npm run dev
 ```
 
-Пользователь вводит запрос прямо в Telegram, а бот отвечает в том же чате.
-Цель — лёгкий, быстрый и полностью безбазовый AI-бот на связке **Flowise + Gemini API**, управляемый минимальным backend.
+The server will be accessible at `http://localhost:3000`.
 
-## 2. Архитектура
+## API Endpoints
 
-```mermaid
-graph LR
-  A[Telegram] -->|Webhook| B[Cloudflare Worker]
-  B -->|HTTP| C[Backend (Serverless API)]
-  C -->|REST| D[Flowise]
-  D -->|Ответ| C
-  C -->|Ответ JSON| B
-  B -->|sendMessage / answerInlineQuery| A
+The local server serves files from the `backend/api/` directory. You can test the endpoints using `curl`.
+
+### `flowise.js`
+
+Example `curl` command for `flowise.js`:
+
+```bash
+curl -X GET http://localhost:3000/api/flowise.js
 ```
 
-### Потоки данных
+### `worker.js`
 
-1. Telegram отправляет webhook → **Cloudflare Worker**
-2. Worker перенаправляет запрос → **Backend API**
-3. Backend:
+Example `curl` command for `worker.js`:
 
-   * создаёт `sessionId`;
-   * обращается к **Flowise**.
-4. Ответ возвращается по цепочке назад.
-
-### Роли компонентов
-
-| Компонент                      | Роль                                                           | Примечание                                                   |
-| ------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| **Telegram API**               | источник событий (`inline_query`, `message`, `callback_query`) | требует публичный HTTPS endpoint                             |
-| **Cloudflare Worker**          | принимает webhook, фильтрует и пересылает данные               | мгновенно обрабатывает запросы, идеален для публичного входа |
-| **Backend (Node.js / Python)** | техническая прослойка: создаёт `sessionId`, вызывает Flowise   | может быть одной serverless-функцией                         |
-| **Flowise**                    | управляет контекстом и вызывает Gemini API                     | не хранит чаты, контексты из `sessionId`                      |
-
-### Ключевые принципы
-
-* **Без БД** — все состояния временные, хранятся в памяти Flowise.
-* **Stateless backend** — сервер можно перезапускать без потерь.
-* (TBD)**Дневной лимит** — ограничение на количество запросов в день для каждого пользователя.
-* **Inline only** — бот не работает как обычный чат-бот.
-* **Один sessionId на inline-запрос**; reply продолжает предыдущую сессию.
-
----
-
-## 🗂 Общая структура
-
+```bash
+curl -X GET http://localhost:3000/api/worker.js
 ```
-telegram-inline-ai-bot/
-├── worker/
-│   ├── worker.js               # Cloudflare Worker (webhook handler)
-│   ├── wrangler.toml           # конфиг деплоя
-│   └── .env                    # токен бота и адрес backend
-│
-├── backend/
-│   ├── handler.js              # serverless-функция (Node.js)
-│   ├── package.json
-│   └── .env                    # Flowise config
-│
-└── README.md
-```
-
----
-
-## Настройка Telegram
-
-1. Создай бота через [@BotFather](https://t.me/BotFather).
-2. Введи команду:
-
-   ```
-   /setinline
-   ```
-
-   и активируй inline-режим.
-3. Установи webhook:
-
-   ```
-   https://api.telegram.org/bot<YOUR_TOKEN>/setWebhook?url=<YOUR_CLOUDFLARE_WORKER_URL>
-   ```
-4. Проверь, что в ответ пришло `{ "ok": true }`.
-
----
-
-## Пример `.env` (общее)
-
-| Файл           | Переменная         | Значение               |
-| -------------- | ------------------ | ---------------------- |
-| `worker/.env`  | `BOT_TOKEN`        | токен Telegram         |
-| `worker/.env`  | `BACKEND_URL`      | URL serverless backend |
-| `backend/.env` | `FLOWISE_BASE_URL` | URL Flowise            |
-| `backend/.env` | `FLOWISE_FLOW_ID`  | ID потока Flowise      |
-
----
-
-## Деплой
-
-1. Задеплой backend (например, на Vercel → получишь URL вроде `https://flowise-backend.vercel.app/api/flowise`).
-2. Укажи этот URL в `worker/wrangler.toml`.
-3. Деплой Worker:
-
-   ```bash
-   cd worker
-   npx wrangler deploy
-   ```
-4. Установи webhook:
-
-   ```bash
-   curl "https://api.telegram.org/bot<token>/setWebhook?url=<worker_url>"
-   ```
-5. Проверь:
-   Введи в Telegram `@botname привет` → должен появиться inline-ответ.
-
