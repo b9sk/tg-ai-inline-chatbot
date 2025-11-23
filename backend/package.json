@@ -5,10 +5,14 @@
   "scripts": {
     "deploy": "vercel deploy",
     "prod": "vercel --prod",
-    "dev": "node local.js"
+    "dev": "node local.js",
+    "test": "vitest"
   },
   "dependencies": {
     "node-fetch": "^2.6.7",
     "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
   }
 }
