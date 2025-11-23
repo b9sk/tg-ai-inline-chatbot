@@ -5,7 +5,7 @@
   "scripts": {
     "deploy": "vercel deploy",
     "prod": "vercel --prod",
-    "dev": "node local.js",
+    "dev": "node index.js",
     "test": "vitest"
   },
   "dependencies": {
